@@ -1,5 +1,6 @@
-class test
+class bint
 {
-	public:
-		test();
+public:
+	bint();
+
 };

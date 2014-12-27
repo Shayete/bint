@@ -3,7 +3,7 @@
 
 using namespace std;
 
-test::test()
+bint::bint()
 {
 	cout << "Created" << endl;
 }
