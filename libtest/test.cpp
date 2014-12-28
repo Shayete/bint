@@ -5,5 +5,5 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-	test test;
+	bint b;
 }
