@@ -10,20 +10,23 @@ public:
 	~bint();
 
 	bint operator +(const long);
-	bint operator + (const long long);
-	bint operator + (const bint &);
+	bint operator +(const long long);
+	bint operator +(const bint &);
 
-	bint operator - (const long);
-	bint operator - (const long long);
-	bint operator - (const bint &);
+	bint operator -(const long);
+	bint operator -(const long long);
+	bint operator -(const bint &);
 
-	bint operator = (const long);
-	bint operator = (const long long);
-	bint operator = (const char *);
+	bint operator =(const long);
+	bint operator =(const long long);
+	bint operator =(const char *);
 
-	void itoa(int n, char *dst);
+	friend std::ostream & operator <<(std::ostream &, const bint &);
+
+	void convert(char *dst, const char *src);
+	void itoa(const int n, char *dst);
 
 private:
-	unsigned char *n;
-
+	char *n;
+	short size_n;
 };

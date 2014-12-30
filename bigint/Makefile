@@ -11,8 +11,8 @@ copy:
 	cp -f libbigint.so.1.0.0 /usr/lib
 
 link:
-	ln -s /usr/lib/libbigint.so.1.0.0 /usr/lib/libbigint.so.1
-	ln -s /usr/lib/libbigint.so.1.0.0 /usr/lib/libbigint.so
+	ln -sf /usr/lib/libbigint.so.1.0.0 /usr/lib/libbigint.so.1
+	ln -sf /usr/lib/libbigint.so.1.0.0 /usr/lib/libbigint.so
 
 clean:
 	rm -f libbigint.so.1.0.0 bigint.o ../libtest/bigint.h 
