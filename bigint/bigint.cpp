@@ -67,6 +67,8 @@ bint::bint()
 {
 	this->size_n = 0;
 	this->n = cmalloc(MAX_SIZE);
+
+	memset(this->n, 0, MAX_SIZE);
 }
 
 bint::bint(const int n)
@@ -88,6 +90,8 @@ bint::bint(const long n)
 
 	this->size_n = 0;
 	this->n = cmalloc(MAX_SIZE);
+
+	memset(this->n, 0, MAX_SIZE);
 	
 	itoa(n, tmp);
 	this->size_n = convert(this->n, tmp);
@@ -102,6 +106,8 @@ bint::bint(const long long n)
 	this->size_n = 0;
 	this->n = cmalloc(MAX_SIZE);
 
+	memset(this->n, 0, MAX_SIZE);
+
 	itoa(n, tmp);
 	this->size_n = convert(this->n, tmp);
 
@@ -113,6 +119,8 @@ bint::bint(const char *n)
 	this->size_n = 0;
 	this->n = cmalloc(MAX_SIZE);
 
+	memset(this->n, 0, MAX_SIZE);
+
 	this->size_n = convert(this->n, n);
 }
 
@@ -122,6 +130,8 @@ bint::bint(const bint &ref)
 
 	this->size_n = 0;
 	this->n = cmalloc(MAX_SIZE);
+
+	memset(this->n, 0, MAX_SIZE);
 
 	for(i = 0; i < ref.size_n; i++)
 		*((this->n) + i) = *(ref.n + i);
@@ -220,25 +230,68 @@ bint bint::bint_add(const bint n, const bint nn)
 	nn_p = cmalloc(MAX_SIZE);
 	ad_p = cmalloc(MAX_SIZE);
 
-	memcpy(n_p, n.n, MAX_SIZE);
-	memcpy(nn_p, nn.n, MAX_SIZE);
+	memset(n_p, 0, MAX_SIZE);
+	memset(nn_p, 0, MAX_SIZE);
+	memset(ad_p, 0, MAX_SIZE);
+	
+	memcpy(n_p, n.n, n.size_n);
+	memcpy(nn_p, nn.n, nn.size_n);
 
 	j = n.size_n - nn.size_n;
 	if(j > 0)
 	{
-		x = n.size_n - 1;
-		for(i = nn.size_n - 1; i >= 0; i--, x--)
+		for(i = 0; i < n.size_n; i++)
 		{
-			cout << "i'll add " << (*(n_p + x) + 0x30) << " " << (*(nn_p + i) + 0x30) << endl;
+			if((*(n_p + i) + *(nn_p + i)) >= 10)
+			{
+				*(n_p + i) = (*(n_p + i) + *(nn_p + i)) - 10;
+				*(ad_p + i) = *(n_p + i);
+				
+				for(j = i + 1; (*(n_p + j) + 1) >= 10; j++)
+					*(n_p + j) = 0;
+
+				if(j == n.size_n)
+				{
+					(*(n_p + j))++;
+					size_n++;
+
+					*(ad_p + j) = *(n_p + j);
+				}
+				else
+					(*(n_p + j))++;
+
+			}
+			else
+				*(ad_p + i) = *(n_p + i) + *(nn_p + i);
 		}
+		size_n += n.size_n;
 	}
 	else if(j < 0)
 	{
-		x = nn.size_n - 1;
-		for(i = n.size_n - 1; i >= 0; i--, x--)
+		for(i = 0; i < nn.size_n; i++)
 		{
-			cout << "i'll add " << (*(n_p + i) + 0x30) << " " << (*(nn_p + x) + 0x30) << endl;	
+			if((*(nn_p + i) + *(n_p + i)) >= 10)
+			{
+				*(nn_p + i) = (*(nn_p + i) + *(n_p + i)) - 10;
+				*(ad_p + i) = *(nn_p + i);
+
+				for(j = i + 1; (*(nn_p + j) + 1) >= 10; j++)
+					*(nn_p + j) = 0;
+
+				if(j == nn.size_n)
+				{
+					(*(nn_p + j))++;
+					size_n++;
+
+					*(ad_p + j) = *(nn_p + j);
+				}
+				else
+					(*(nn_p + j))++;
+			}
+			else
+				*(ad_p + i) = *(nn_p + i) + *(n_p + i);
 		}
+		size_n += nn.size_n;
 	}
 	else
 	{
