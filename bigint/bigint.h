@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 
-#define MAX_SIZE 100
+#define MAX_SIZE 10000
 
 class bint 
 {
@@ -20,11 +20,22 @@ public:
 	bint operator +(const long long);
 	bint operator +(const bint &);
 
+	void operator +=(const int);
+	void operator +=(const long);
+	void operator +=(const long long);
+	void operator +=(const bint &);
+
 	bint operator -(const int);
 	bint operator -(const long);
 	bint operator -(const long long);
 	bint operator -(const bint &);
 
+	void operator -=(const int);
+	void operator -=(const long);
+	void operator -=(const long long);
+	void operator -=(const bint &);
+
+	bint operator *(const int);
 	bint operator *(const bint &);
 
 	void operator ++(const int);
@@ -53,6 +64,7 @@ public:
 	bool operator ==(const bint &);
 
 	friend std::ostream & operator <<(std::ostream &, const bint &);
+	bint factorial(const int);
 private:
 	char *n;
 	short size_n;

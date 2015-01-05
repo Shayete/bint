@@ -5,7 +5,6 @@ using namespace std;
 char *cmalloc(const size_t n)
 {
 	char *p = (char *)malloc(sizeof(char) * n);
-
 	if(!p) {
 		cout << "out of memory" << endl;
 		exit(1);
@@ -27,12 +26,13 @@ short convert(char *dst, const char *src)
 	return size_n;
 }
 
-void itoa(const long long n, char *dst)
+int itoa(const long long n, char *dst)
 {
 	long long il_n = n;
-	short digit;
+	int digit, digit_ret;
 
 	for(digit = 1; (il_n /= 10) != 0; digit++);
+	digit_ret = digit;
 
 	il_n = n;
 	*(dst + digit) = 0x00;
@@ -41,11 +41,13 @@ void itoa(const long long n, char *dst)
 		*(dst + digit) = ((il_n % 10) + 0x30);
 		il_n /= 10;
 	}
+
+	return digit_ret;
 }
 
 void memset(char *dst, const int val, const size_t n)
 {
-	int i;
+	unsigned int i;
 	for(i = 0; i < n; i++)
 		*(dst + i) = val;
 
@@ -53,7 +55,7 @@ void memset(char *dst, const int val, const size_t n)
 
 void memcpy(char *dst, const char *src, const size_t n)
 {
-	int i;
+	unsigned int i;
 	for(i = 0; i < n; i++)
 		*(dst + i) = *(src + i);
 }
@@ -90,8 +92,6 @@ bint::bint(const long n)
 	
 	itoa(n, tmp);
 	this->size_n = convert(this->n, tmp);
-
-	cout << this->size_n << endl;
 
 	free(tmp);
 }
@@ -142,7 +142,6 @@ bint::~bint() { free(this->n); }
 bint bint::operator +(const int n)
 {
 	bint s, b_tmp = n;
-
 	s = bint_add(*this, b_tmp);
 
 	return s;
@@ -151,9 +150,6 @@ bint bint::operator +(const int n)
 bint bint::operator +(const long n)
 {
 	bint s, b_tmp = n;
-
-	cout << b_tmp.size_n << endl;
-
 	s = bint_add(*this, b_tmp);
 
 	return s;
@@ -162,7 +158,6 @@ bint bint::operator +(const long n)
 bint bint::operator +(const long long n)
 {
 	bint s, b_tmp = n;
-
 	s = bint_add(*this, b_tmp);
 
 	return s;
@@ -171,11 +166,34 @@ bint bint::operator +(const long long n)
 bint bint::operator +(const bint &ref)
 {
 	bint s;
-
 	s = bint_add(*this, ref);
 
 	return s;
 }
+
+void bint::operator +=(const int n)
+{
+	bint s, b_tmp = n;
+	*this = *this + n;
+}	
+
+void bint::operator +=(const long n)
+{
+	bint s, b_tmp = n;
+	*this = *this + n;
+}
+
+void bint::operator +=(const long long n)
+{
+	bint s, b_tmp = n;
+	*this = *this + n;
+}
+
+void bint::operator +=(const bint &ref)
+{
+	*this = *this + ref;
+}
+
 
 bint bint::operator -(const int n)
 {
@@ -223,11 +241,45 @@ bint bint::operator -(const bint &ref)
 	return s;
 }
 
+void bint::operator -=(const int n)
+{
+	bint b_tmp = n;
+	*this = *this - b_tmp;
+}
+
+void bint::operator -=(const long n)
+{
+	bint b_tmp = n;
+	*this = *this - b_tmp;
+}
+
+void bint::operator -=(const long long n)
+{
+	bint b_tmp = n;
+	*this = *this - b_tmp;
+}
+
+void bint::operator -=(const bint &ref)
+{
+	*this = *this - ref;
+}
+
+bint bint::operator *(const int n)
+{
+	bint s, b_tmp = n;
+
+	s = bint_mul(*this, b_tmp);
+	s = bint_cleanup(s);
+
+	return s;
+}
+
 bint bint::operator *(const bint &ref)
 {
 	bint s;
 
 	s = bint_mul(*this, ref);
+	s = bint_cleanup(s);
 
 	return s;
 }
@@ -350,6 +402,18 @@ ostream& operator <<(ostream &os, const bint &ref)
 	return os;
 }
 
+bint bint::factorial(const int n)
+{
+	bint s = n;
+	int i_n = n;
+
+	for(i_n -= 1; i_n > 1; i_n--) {
+		s = s * i_n;
+	}
+
+	return s;
+}
+
 /* Addition Function 
  * when a + b;
  * @param n is a left operand (a)
@@ -359,8 +423,8 @@ bint bint::bint_add(const bint n, const bint nn)
 {
 	bint s;
 
-	int i, j;
-	short size_n = 0;
+	int i = 0, j;
+	short size_n = 0, size_n_real = n.size_n;
 	char *n_p, *nn_p, *ad_p;
 
 	n_p = cmalloc(MAX_SIZE);
@@ -375,78 +439,35 @@ bint bint::bint_add(const bint n, const bint nn)
 	memcpy(nn_p, nn.n, nn.size_n);
 
 	j = n.size_n - nn.size_n;
-	if(j > 0) {
-		for(i = 0; i < n.size_n; i++) {
-			if((*(n_p + i) + *(nn_p + i)) >= 10) {
-				*(n_p + i) = (*(n_p + i) + *(nn_p + i)) - 10;
-				*(ad_p + i) = *(n_p + i);
+	if(j > 0) 
+		size_n_real = n.size_n;
+	else if(j <= 0)
+		size_n_real = nn.size_n;
+
+	for(i = 0; i < size_n_real; i++) {
+		if((*(n_p + i) + *(nn_p + i)) >= 10) {
+			*(n_p + i) = (*(n_p + i) + *(nn_p + i)) - 10;
+			*(ad_p + i) = *(n_p + i);
+
+			for(j = i + 1; (*(n_p + j) + 1) >= 10; j++)
+				*(n_p + j) = 0;
 				
-				for(j = i + 1; (*(n_p + j) + 1) >= 10; j++)
-					*(n_p + j) = 0;
-
-				if(j == n.size_n) {
-					(*(n_p + j))++;
-					size_n++;
-
-					*(ad_p + j) = *(n_p + j);
-				}
-				else
-					(*(n_p + j))++;
-			}
-			else
-				*(ad_p + i) = *(n_p + i) + *(nn_p + i);
-		}
-		size_n += n.size_n;
-	}
-	else if(j < 0) {
-		for(i = 0; i < nn.size_n; i++) {
-			if((*(nn_p + i) + *(n_p + i)) >= 10) {
-				*(nn_p + i) = (*(nn_p + i) + *(n_p + i)) - 10;
-				*(ad_p + i) = *(nn_p + i);
-
-				for(j = i + 1; (*(nn_p + j) + 1) >= 10; j++)
-					*(nn_p + j) = 0;
-
-				if(j == nn.size_n) {
-					(*(nn_p + j))++;
-					size_n++;
-
-					*(ad_p + j) = *(nn_p + j);
-				}
-				else
-					(*(nn_p + j))++;
-			}
-			else
-				*(ad_p + i) = *(nn_p + i) + *(n_p + i);
-		}
-		size_n += nn.size_n;
-	}
-	else {
-		for(i = 0; i < n.size_n; i++) {
-			if((*(n_p + i) + *(nn_p + i)) >= 10) {
-				*(n_p + i) = (*(n_p + i) + *(nn_p + i)) - 10;
-				*(ad_p + i) = *(n_p + i);
-
-				for(j = i + 1; (*(n_p + j) + 1) >= 10; j++)
-					*(n_p + j) = 0;
-				
-				if(j == n.size_n) {
-					(*(n_p + j))++;
-					size_n++;
+			if(j == n.size_n) {
+				(*(n_p + j))++;
+				size_n++;
 						
-					*(ad_p + j) = *(n_p + j);
-				}
-				else
-					(*(n_p + j))++;
-			}	
+				*(ad_p + j) = *(n_p + j);
+			}
 			else
-				*(ad_p + i) = *(n_p + i) + *(nn_p + i);
-		}
-		size_n += n.size_n;
+				(*(n_p + j))++;
+		}	
+		else
+			*(ad_p + i) = *(n_p + i) + *(nn_p + i);
 	}
+	size_n += size_n_real;
 
 	memcpy(s.n, ad_p, size_n);
-	s.size_n = size_n;
+	s.size_n = size_n_real;
 
 	free(n_p);
 	free(nn_p);
@@ -460,7 +481,7 @@ bint bint::bint_sub(const bint n, const bint nn)
 	bint s;
 
 	int i, j;
-	short size_n;
+	short size_n, size_n_real = n.size_n;
 	char *n_p, *nn_p, *sb_p;
 
 	n_p = cmalloc(MAX_SIZE);
@@ -475,49 +496,25 @@ bint bint::bint_sub(const bint n, const bint nn)
 	memcpy(n_p, n.n, n.size_n);
 	memcpy(nn_p, nn.n, nn.size_n);
 
-	j = n.size_n - nn.size_n;
-	if(j > 0) {
-		for(i = 0; i < n.size_n; i++) {
-			if((*(n_p + i) - *(nn_p + i)) < 0) {
-				*(n_p + i) = (10 + *(n_p + i)) - *(nn_p + i);
-				*(sb_p + i) = *(n_p + i);
+	for(i = 0; i < size_n_real; i++) {
+		if((*(n_p + i) - *(nn_p + i)) < 0) {
+			*(n_p + i) = (10 + *(n_p + i)) - *(nn_p + i);
+			*(sb_p + i) = *(n_p + i);
 
-				for(j = i + 1; ((j < n.size_n) && ((*(n_p + i) - 1) < 0)); j++)
-					*(n_p + i) = 9;
+			for(j = i + 1; ((j < n.size_n) && ((*(n_p + i) - 1) < 0)); j++)
+				*(n_p + i) = 9;
 
-				if(j == n.size_n) {
-					(*(n_p + j))--;
-					size_n--;
+			if(j == n.size_n) {
+				(*(n_p + j))--;
+				size_n--;
 
-					*(sb_p + j) = *(n_p + j);
-				} else
-					(*(n_p + j))--;
+				*(sb_p + j) = *(n_p + j);
 			} else
-				*(sb_p + i) = *(n_p + i) - *(nn_p + i);
-		}	
-		size_n += n.size_n;
+				(*(n_p + j))--;
+		} else
+			*(sb_p + i) = *(n_p + i) - *(nn_p + i);
 	}
-	else if(!j) {
-		for(i = 0; i < n.size_n; i++) {
-			if((*(n_p + i) - *(nn_p + i)) < 0) {
-				*(n_p + i) = (10 + *(n_p + i)) - *(nn_p + i);
-				*(sb_p + i) = *(n_p + i);
-
-				for(j = i + 1; ((j < n.size_n) && ((*(n_p + i) - 1) < 0)); j++)
-					*(n_p + i) = 9;
-
-				if(j == n.size_n) {
-					(*(n_p + j))--;
-					size_n--;
-
-					*(sb_p + j) = *(n_p + j);
-				} else
-					(*(n_p + j))--;
-			} else
-				*(sb_p + i) = *(n_p + i) - *(nn_p + i);
-		}
-		size_n += n.size_n;
-	}
+	size_n += size_n_real;
 
 	s.size_n = size_n;
 	memcpy(s.n, sb_p, size_n);
@@ -529,23 +526,80 @@ bint bint::bint_sub(const bint n, const bint nn)
 	return s;
 }
 
-/* multiply function 
- * when a * b
- * @param n is a left operand (a)
- * @param nn is a right operand (b)
- * 257 * 12 = 257 + 257 + 257 ......... 12 times ....
- * when a * b ...
- * ( a + a ) b times
- * using bint_add function
- */
 bint bint::bint_mul(const bint n, const bint nn)
 {
-	bint n_tmp = n, nn_tmp = nn, s = 0;
+	bint s, ml_bi;
+	int h, i, j, k, x = 0, y, z, val_t, size_n = n.size_n;
+	char *n_p, *nn_p, *ml_p;
 
-	nn_tmp++;
-	for(; !(nn_tmp == 1); nn_tmp--)
-		s = s + n_tmp;
+	n_p = cmalloc(MAX_SIZE);
+	nn_p = cmalloc(MAX_SIZE);
+	ml_p = cmalloc(MAX_SIZE);
 
+	memset(n_p, 0, MAX_SIZE);
+	memset(nn_p, 0, MAX_SIZE);
+	memset(ml_p, 0, MAX_SIZE);
+
+	memcpy(n_p, n.n, n.size_n);
+	memcpy(nn_p, nn.n, nn.size_n);
+
+	j = n.size_n - nn.size_n;
+	if(j > 0) 
+		size_n = n.size_n;
+	else if(j < 0)
+		size_n = nn.size_n;
+
+	for(i = 0; i < size_n; i++) {
+		for(j = 0; j < size_n; j++) {
+			memset(ml_p, 0, MAX_SIZE);
+			if((*(n_p + j) * *(nn_p + i)) >= 10) {
+				val_t = *(n_p + j) * *(nn_p + i);
+				y = itoa(val_t, ml_p) - 1;
+				k = (i + j);
+
+				h = *(ml_p + 0) - 0x30;
+				*(ml_p + 0) = *(ml_p + 1) - 0x30;
+				*(ml_p + 1) = h;
+					
+				for(x = y, h = k; h > 0; x++, h--) {
+					*(ml_p + x + 1) = *(ml_p + x);
+					*(ml_p + x) = *(ml_p + x - 1);
+				}
+
+				for(x = k - 1; x >= 0; x--)
+					*(ml_p + x) = 0;
+
+				ml_bi.size_n = k + 2;
+				memcpy(ml_bi.n, ml_p, k + 2);
+
+				s += ml_bi;
+			} 
+			else {
+				val_t = *(n_p + j) * *(nn_p + i);
+				y = itoa(val_t, ml_p) - 1;
+				k = (i + j);
+
+				*(ml_p + 0) = *(ml_p + 0) - 0x30;
+				for(x = y, h = k; h > 0; x++, h--) {
+					*(ml_p + x + 1) = *(ml_p + x);
+					*(ml_p + x) = *(ml_p + x - 1);
+				}
+
+				for(x = k - 1; x >= 0; x--)
+					*(ml_p + x) = 0;
+
+				ml_bi.size_n = k + 2;
+				memcpy(ml_bi.n, ml_p, k + 2);
+
+				s += ml_bi;
+			}
+		}
+	}
+
+	free(n_p);
+	free(nn_p);
+	free(ml_p);
+	
 	return s;
 }
 
